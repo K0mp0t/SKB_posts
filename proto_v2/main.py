@@ -1,14 +1,15 @@
+import io
+
 from proto_v2 import comp_colors, image_enhance, patterns, segmentation
 from PIL import Image
 
 
 class GenImage:
-    def __init__(self, filename, image_bytes, model, forms_root, fonts_root, seg_model_path, text=None):
+    def __init__(self, image_bytes, model, forms_root, fonts_root, seg_model_path, text=None):
         self.text = text
         self.basesize = 1080
-        self.filename = filename
-        self.image = Image.open(filename)
         self.image_bytes = image_bytes
+        self.image = Image.open(io.BytesIO(image_bytes))
         self.seg_model_path = seg_model_path
         self.forms_root = forms_root
         self.fonts_root = fonts_root
@@ -53,7 +54,7 @@ class GenImage:
                                                                             self.fonts_root))
         all_results.extend(patterns.gen_interview_pattern(self))
         all_results.extend(patterns.gen_interview_pattern(self, pattern_type='color'))
-        # all_results.extend(create_pattern_vacance_description(self.text))
+        # all_results.extend(create_pattern_vacancy_description(self.text))
         return all_results
 
     def generate_image_by_image(self, israndom=False):
@@ -99,7 +100,7 @@ class GenImage:
 
     def get_comp_colors(self, n_colors=4):
         self.comp_colors = []
-        gcc = comp_colors.get_complement_colors(self.filename, n_colors)
+        gcc = comp_colors.get_complement_colors(io.BytesIO(self.image_bytes), n_colors)
         base_colors = [(0, 170, 19), (255, 117, 0),
                        (151, 215, 0), (255, 198, 0), (224, 0, 77)]
         self.comp_colors = comp_colors.get_based_colors(base_colors, gcc)
@@ -114,7 +115,8 @@ class GenImage:
         return self.mask
 
     def crop_image(self, center_image=True):
-        self.croped_images = image_enhance.crop_by_sqare(self.mask, self.image, center_image=center_image, scale=self.scale)
+        self.croped_images = image_enhance.crop_by_sqare(self.mask, self.image,
+                                                         center_image=center_image, scale=self.scale)
         self.croped_masks = image_enhance.crop_by_sqare(self.mask, center_image=center_image, scale=self.scale)
 
     def get_empty_areas_on_croped(self, count):

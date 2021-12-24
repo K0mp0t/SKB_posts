@@ -12,8 +12,7 @@ img_bytes = io.BytesIO()
 img.save(img_bytes, format='PNG')
 img_bytes = img_bytes.getvalue()
 
-gm = GenImage(filename=image_path,
-              image_bytes=img_bytes,
+gm = GenImage(image_bytes=img_bytes,
               model=model,
               forms_root='forms_processed',
               fonts_root='Fonts',

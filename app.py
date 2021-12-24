@@ -18,8 +18,8 @@ FONTS_ROOT = 'proto_v2/Fonts'
 SEG_MODEL_PATH = 'proto_v2/mobile_net_model'
 
 
-def generate_images(path, img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
-    generator = main.GenImage(path, image_bytes=img_bytes,
+def generate_images(img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
+    generator = main.GenImage(image_bytes=img_bytes,
                               model=estimator, forms_root=forms_root, fonts_root=fonts_root,
                               seg_model_path=seg_model_path, text=text)
 
@@ -36,13 +36,8 @@ def generate():
             if text == '':
                 abort(400)
             img_data = b64decode(request.json.get('image', ''))
-            img = Image.open(io.BytesIO(img_data))
 
-            img_path = os.path.join(app.root_path, 'proto_v2', 'temp.png')
-
-            img.save(img_path)
-            images = generate_images(img_path, io.BytesIO(img_data), ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL_PATH, text)
-            os.remove(img_path)
+            images = generate_images(io.BytesIO(img_data).getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL_PATH, text)
 
             encoded_images = list()
 
@@ -53,7 +48,8 @@ def generate():
 
                 encoded_images.append(b64encode(img_arr.getvalue()).decode('utf-8'))
 
-            return Response(json.dumps({'images': encoded_images}), headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}), 201
+            return Response(json.dumps({'images': encoded_images}), headers={'Access-Control-Allow-Origin': '*',
+                                                                             'Content-Type': 'application/json'}), 201
 
         elif request.files:
             file = request.files['file']
@@ -65,19 +61,12 @@ def generate():
 
             img_bytes = io.BytesIO()
             img.save(img_bytes, format='PNG')
-            img_bytes = img_bytes.getvalue()
-
-            img_path = os.path.join(app.root_path, 'proto_v2', 'temp.png')
-
-            img.save(img_path)
 
             start = time.time()
 
-            images = generate_images(img_path, img_bytes, ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL_PATH, text)
+            images = generate_images(img_bytes.getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL_PATH, text)
 
             end = round(time.time() - start, 2)
-
-            os.remove(img_path)
 
             encoded_images = list()
             for image in images:
