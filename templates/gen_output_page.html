@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Generation input page{% endblock title %}
+{% block main %}
+    <h2>Time taken: {{ end }} sec. Generation result:</h2>
+    <h2><a href="{{ url_for('generate') }}">Regenerate</a></h2>
+    {% for image in encoded_images %}
+        <img src="data:image/jpeg;base64,{{ image }}" width="400" alt="Generation result">
+    {% endfor %}
+{% endblock main %}

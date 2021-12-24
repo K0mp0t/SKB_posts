@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Generation input page{% endblock title %}
+{% block main %}
+    <h2>Upload the image below.</h2>
+    <form method="POST" action="" enctype="multipart/form-data">
+        <p><input type="file" name="file"></p>
+        <p><label>Text:
+            <input type="text" name="text">
+        </label></p>
+        <p><input type="submit" value="Submit"></p>
+    </form>
+{% endblock main %}

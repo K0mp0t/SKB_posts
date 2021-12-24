@@ -1,0 +1,204 @@
+from io import BytesIO
+
+import numpy as np
+from PIL import Image
+
+import tensorflow as tf
+from collections import namedtuple
+
+Info = namedtuple('Info', 'start height')
+
+
+class DeepLabModel(object):
+    """Class to load deeplab model and run inference."""
+
+    INPUT_TENSOR_NAME = 'ImageTensor:0'
+    OUTPUT_TENSOR_NAME = 'SemanticPredictions:0'
+    INPUT_SIZE = 513
+    FROZEN_GRAPH_NAME = 'frozen_inference_graph'
+
+    def __init__(self, tarball_path):
+        """Creates and loads pretrained deeplab model."""
+        self.graph = tf.Graph()
+
+        graph_def = None
+        graph_def = tf.compat.v1.GraphDef.FromString(open(tarball_path + "/frozen_inference_graph.pb", "rb").read())
+
+        if graph_def is None:
+            raise RuntimeError('Cannot find inference graph in tar archive.')
+
+        with self.graph.as_default():
+            tf.import_graph_def(graph_def, name='')
+
+        self.sess = tf.compat.v1.Session(graph=self.graph)
+
+    def run(self, image):
+        """Runs inference on a single image.
+    
+        Args:
+          image: A PIL.Image object, raw input image.
+    
+        Returns:
+          resized_image: RGB image resized from original input image.
+          seg_map: Segmentation map of `resized_image`.
+        """
+
+        width, height = image.size
+        resize_ratio = 1.0 * self.INPUT_SIZE / max(width, height)
+        target_size = (int(resize_ratio * width), int(resize_ratio * height))
+        resized_image = image.convert('RGB').resize(target_size, Image.ANTIALIAS)
+        batch_seg_map = self.sess.run(
+            self.OUTPUT_TENSOR_NAME,
+            feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
+        seg_map = batch_seg_map[0]
+
+        return resized_image, seg_map
+
+
+# def seg(inputFilePath, model_type=1):
+#     """remove background from image
+#     Parameters:
+#       inputFilePath
+#       model_type mobile_net_model=0/xception_model=1 def:1
+#     Return:
+#       Resized Image
+#       Mask
+#       Segmented Image
+#     """
+#     if inputFilePath is None:
+#         raise RuntimeError("Bad parameters. Please specify input file path and output file path")
+#
+#     modelType = "proto_v2/mobile_net_model"
+#     if model_type == 1:
+#         modelType = "xception_model"
+#
+#     model = DeepLabModel(modelType)
+#
+#     def run_visualization(filepath):
+#         """Inferences DeepLab model and visualizes result."""
+#         try:
+#             # f = open(inputFilePath)
+#             jpeg_str = open(filepath, "rb").read()
+#             orignal_im = Image.open(BytesIO(jpeg_str))
+#         except IOError:
+#             print('Cannot retrieve image. Please check file: ' + filepath)
+#             return
+#
+#         resized_im, seg_map = model.run(orignal_im)
+#
+#         return orignal_im, seg_map
+#
+#     visualization = run_visualization(inputFilePath)
+#
+#     del model
+#
+#     return visualization
+
+
+def seg(image_bytes, model_path):
+    """remove background from image
+    Parameters:
+      image_bytes
+      model_path
+    Return:
+      Resized Image
+      Mask
+      Segmented Image
+    """
+    if image_bytes is None:
+        raise RuntimeError("Bad parameters. Please specify input file path and output file path")
+
+    model = DeepLabModel(model_path)
+
+    def run_visualization(image_bytes):
+        """Inferences DeepLab model and visualizes result."""
+        try:
+            orignal_im = Image.open(BytesIO(image_bytes))
+        except IOError:
+            print('Cannot retrieve image.')
+            return
+
+        resized_im, seg_map = model.run(orignal_im)
+
+        return orignal_im, seg_map
+
+    visualization = run_visualization(image_bytes)
+
+    del model
+
+    return visualization
+
+
+# returns height, width, and position of the top left corner of the largest
+#  rectangle with the given value in mat
+def max_size(mat, value=0):
+    it = iter(mat)
+    hist = [(el == value) for el in next(it, [])]
+    max_size_start, start_row = max_rectangle_size(hist), 0
+    for i, row in enumerate(it):
+        hist = [(1 + h) if el == value else 0 for h, el in zip(hist, row)]
+        mss = max_rectangle_size(hist)
+        if area(mss) > area(max_size_start):
+            max_size_start, start_row = mss, i + 2 - mss[0]
+    return max_size_start[:2], (start_row, max_size_start[2])
+
+
+# returns height, width, and start column of the largest rectangle that
+#  fits entirely under the histogram
+def max_rectangle_size(histogram):
+    stack = []
+    top = lambda: stack[-1]
+    max_size_start = (0, 0, 0)  # height, width, start of the largest rectangle
+    pos = 0  # current position in the histogram
+    for pos, height in enumerate(histogram):
+        start = pos  # position where rectangle starts
+        while True:
+            if not stack or height > top().height:
+                stack.append(Info(start, height))  # push
+            elif stack and height < top().height:
+                max_size_start = max(
+                    max_size_start,
+                    (top().height, pos - top().start, top().start),
+                    key=area)
+                start, _ = stack.pop()
+                continue
+            break  # height == top().height goes here
+
+    pos += 1
+    for start, height in stack:
+        max_size_start = max(max_size_start, (height, pos - start, start),
+                             key=area)
+
+    return max_size_start
+
+
+def area(size): return size[0] * size[1]
+
+
+def get_empty_areas(mask, areas_count=1, scale=1):
+    """
+    Parameters:
+        mask (:obj:`np.array`): The first parameter.
+        areas_count (:obj:`int`, optional): The second parameter. Defaults to 1.
+
+    Return:
+        list: ((pos_x, pos_y), (size_x, size_y)).
+    """
+    
+    img = mask.copy()
+    result = []
+
+    def scale_and_int(n):
+        return int(n * scale)
+
+    for i in range(areas_count):
+        size, pos = max_size(img)
+        scaled_size, scaled_pos = list(map(scale_and_int, size)), list(map(scale_and_int, pos))
+
+        result.append(((scaled_pos[1], scaled_pos[0]), (scaled_size[1], scaled_size[0])))
+
+        for x in range(pos[1], pos[1] + size[1]):
+            for y in range(pos[0], pos[0] + size[0]):
+                img[y, x] = 1
+
+    return result
