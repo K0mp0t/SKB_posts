@@ -1,12 +1,7 @@
 from io import BytesIO
-
 import numpy as np
 from PIL import Image
-
 import tensorflow as tf
-from collections import namedtuple
-
-Info = namedtuple('Info', 'start height')
 
 
 class DeepLabModel(object):
@@ -53,46 +48,6 @@ class DeepLabModel(object):
         seg_map = batch_seg_map[0]
 
         return resized_image, seg_map
-
-
-# def seg(inputFilePath, model_type=1):
-#     """remove background from image
-#     Parameters:
-#       inputFilePath
-#       model_type mobile_net_model=0/xception_model=1 def:1
-#     Return:
-#       Resized Image
-#       Mask
-#       Segmented Image
-#     """
-#     if inputFilePath is None:
-#         raise RuntimeError("Bad parameters. Please specify input file path and output file path")
-#
-#     modelType = "proto_v2/mobile_net_model"
-#     if model_type == 1:
-#         modelType = "xception_model"
-#
-#     model = DeepLabModel(modelType)
-#
-#     def run_visualization(filepath):
-#         """Inferences DeepLab model and visualizes result."""
-#         try:
-#             # f = open(inputFilePath)
-#             jpeg_str = open(filepath, "rb").read()
-#             orignal_im = Image.open(BytesIO(jpeg_str))
-#         except IOError:
-#             print('Cannot retrieve image. Please check file: ' + filepath)
-#             return
-#
-#         resized_im, seg_map = model.run(orignal_im)
-#
-#         return orignal_im, seg_map
-#
-#     visualization = run_visualization(inputFilePath)
-#
-#     del model
-#
-#     return visualization
 
 
 def seg(image_bytes, model_path):
@@ -147,18 +102,18 @@ def max_size(mat, value=0):
 #  fits entirely under the histogram
 def max_rectangle_size(histogram):
     stack = []
-    top = lambda: stack[-1]
+
     max_size_start = (0, 0, 0)  # height, width, start of the largest rectangle
     pos = 0  # current position in the histogram
     for pos, height in enumerate(histogram):
         start = pos  # position where rectangle starts
         while True:
-            if not stack or height > top().height:
-                stack.append(Info(start, height))  # push
-            elif stack and height < top().height:
+            if not stack or height > stack[-1][1]:
+                stack.append((start, height))  # push
+            elif stack and height < stack[-1][1]:
                 max_size_start = max(
                     max_size_start,
-                    (top().height, pos - top().start, top().start),
+                    (stack[-1][1], pos - stack[-1][0], stack[-1][0]),
                     key=area)
                 start, _ = stack.pop()
                 continue
@@ -184,7 +139,7 @@ def get_empty_areas(mask, areas_count=1, scale=1):
     Return:
         list: ((pos_x, pos_y), (size_x, size_y)).
     """
-    
+
     img = mask.copy()
     result = []
 
@@ -194,6 +149,9 @@ def get_empty_areas(mask, areas_count=1, scale=1):
     for i in range(areas_count):
         size, pos = max_size(img)
         scaled_size, scaled_pos = list(map(scale_and_int, size)), list(map(scale_and_int, pos))
+
+        if scaled_size[0] == 0 or scaled_size[1] == 0:  # TODO: add a better filter for scaled size
+            break
 
         result.append(((scaled_pos[1], scaled_pos[0]), (scaled_size[1], scaled_size[0])))
 

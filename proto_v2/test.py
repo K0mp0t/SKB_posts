@@ -1,3 +1,5 @@
+import time
+
 from main import *
 from tensorflow.keras.models import load_model
 from PIL import Image
@@ -19,6 +21,7 @@ gm = GenImage(image_bytes=img_bytes,
               seg_model_path='mobile_net_model',
               text='Лучшая аниме девочка на планете земля мне похуй')
 
-res = gm.generate()
+start = time.time()
 
-print(res)
+for i in gm.generate_image_by_image():
+    print(f'{round(time.time() - start, 4)} sec')

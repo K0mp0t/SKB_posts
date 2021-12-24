@@ -18,8 +18,7 @@ def get_font_size(text, font, max_width=None, max_height=None):
     text_size = get_text_size(font, font_size, text)
     if (max_width is not None and text_size[0] > max_width) or \
             (max_height is not None and text_size[1] > max_height):
-        raise ValueError("Text can't be filled in only (%dpx, %dpx)" % \
-                         text_size)
+        raise ValueError("Text can't be filled in only (%dpx, %dpx)" % text_size)
     while True:
         if (max_width is not None and text_size[0] >= max_width) or \
                 (max_height is not None and text_size[1] >= max_height):

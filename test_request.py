@@ -22,4 +22,4 @@ request = requests.post("http://localhost:5000/generate",
 # request = requests.options("http://167.71.42.229:20210/generate")
 
 # response = json.loads(request.content)
-print(request.status_code, time.time()-start)
+print(request.status_code, time.time() - start)

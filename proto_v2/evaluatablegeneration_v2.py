@@ -62,11 +62,11 @@ def generate_good_image(generator, model, threshold=0.5):
 
     while y_pred < threshold:
         img = next(generator)
-        X = alpha_to_color(img)
-        X = resize_image_with_pad(X, model.input_shape[1: 3])
-        X = np.array([np.array(X)])
-        X = preprocess_input(X)
-        y_pred = model.predict(X)[0][0]
+        x = alpha_to_color(img)
+        x = resize_image_with_pad(x, model.input_shape[1: 3])
+        x = np.array([np.array(x)])
+        x = preprocess_input(x)
+        y_pred = model.predict(x)[0][0]
 
     return img
 

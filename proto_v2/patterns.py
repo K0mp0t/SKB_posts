@@ -185,8 +185,8 @@ def create_pattern_checkmarks(genImage):
         result = used_img.copy()
         result.paste(used_img, mask=filtered_mask)
 
-        img_text, lines_sizes, line_spacing = get_image_text(780, 172, genImage.text, genImage.fonts_root, font_type='b',
-                                                             color=(255, 255, 255), max_font_size=72)
+        img_text, lines_sizes, line_spacing = get_image_text(780, 172, genImage.text, genImage.fonts_root,
+                                                             font_type='b', color=(255, 255, 255), max_font_size=72)
         lower_bound_text = find_lower_bound_of_text(lines_sizes, line_spacing)
         result.paste(img_text, mask=img_text, box=(110, 1080 - 60 - lower_bound_text))
 
@@ -380,7 +380,7 @@ def gen_interview_pattern(genImage, pattern_type='round', cropped_image_index=1,
 
     img_with_mask.paste(img_text, text_box, img_text)
 
-    paths = [os.path.join(genImage.forms_root, x) for x in os.listdir(genImage.forms_root) \
+    paths = [os.path.join(genImage.forms_root, x) for x in os.listdir(genImage.forms_root)
              if 'triangle_br' in x
              and 's' not in x
              and 'big' not in x

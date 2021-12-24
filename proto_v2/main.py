@@ -1,5 +1,5 @@
 import io
-
+from functools import partial
 from proto_v2 import comp_colors, image_enhance, patterns, segmentation
 from PIL import Image
 
@@ -58,32 +58,19 @@ class GenImage:
         return all_results
 
     def generate_image_by_image(self, israndom=False):
-        # TODO:
-        # mytokenize_s = partial(mytokenize, normalize='s')
-        # mytokenize_l = partial(mytokenize, normalize='l')
+        generation_patterns = [partial(patterns.gen_simple_pattern, self),
+                               partial(patterns.gen_simple_pattern, self, with_mask=True),
+                               partial(patterns.create_pattern_vacancy, text=self.text, forms_root=self.forms_root,
+                                       fonts_root=self.fonts_root),
+                               partial(patterns.create_pattern_checkmarks, self),
+                               partial(patterns.create_pattern_header_at_top_checkmarks, text=self.text,
+                                       forms_root=self.forms_root, fonts_root=self.fonts_root),
+                               partial(patterns.gen_interview_pattern, self),
+                               partial(patterns.gen_interview_pattern, self, pattern_type='color')]
 
-        a = patterns.gen_simple_pattern(self, )
-        for i in a:
-            yield i
-        a = patterns.gen_simple_pattern(self, with_mask=True)
-        for i in a:
-            yield i
-        a = patterns.create_pattern_vacancy(self.text, self.forms_root, self.fonts_root)
-        for i in a:
-            yield i
-        a = patterns.create_pattern_checkmarks(self)
-        for i in a:
-            yield i
-        a = patterns.create_pattern_header_at_top_checkmarks(self.text, self.forms_root, self.fonts_root)
-        for i in a:
-            yield i
-        a = patterns.gen_interview_pattern(self)
-        for i in a:
-            yield i
-        a = patterns.gen_interview_pattern(self, pattern_type='color')
-        for i in a:
-            yield i
-        return None
+        for pattern in generation_patterns:
+            for image in pattern():
+                yield image
 
     def apply_all_enhance(self):
         self.original_image = self.image.copy()

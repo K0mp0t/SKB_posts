@@ -4,7 +4,6 @@ from PIL import Image
 import io
 import json
 from proto_v2 import main
-import os
 from tensorflow.python.keras.models import load_model
 import time
 
@@ -26,6 +25,14 @@ def generate_images(img_bytes, estimator, forms_root, fonts_root, seg_model_path
     return generator.generate()
 
 
+def generate_images_sequentially(img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
+    generator = main.GenImage(image_bytes=img_bytes,
+                              model=estimator, forms_root=forms_root, fonts_root=fonts_root,
+                              seg_model_path=seg_model_path, text=text)
+
+    return generator.generate_image_by_image()
+
+
 @app.route('/generate', methods=['GET', 'POST', 'OPTIONS'])
 def generate():
     if request.method == 'POST':
@@ -37,7 +44,8 @@ def generate():
                 abort(400)
             img_data = b64decode(request.json.get('image', ''))
 
-            images = generate_images(io.BytesIO(img_data).getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL_PATH, text)
+            images = generate_images(io.BytesIO(img_data).getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT,
+                                     SEG_MODEL_PATH, text)
 
             encoded_images = list()
 

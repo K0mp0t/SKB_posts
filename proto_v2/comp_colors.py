@@ -6,10 +6,14 @@ from colormath.color_diff import delta_e_cie2000
 from colormath.color_conversions import convert_color
 from colormath.color_objects import sRGBColor, LabColor
 
+
 def hilo(a, b, c):
-    if c < b: b, c = c, b
-    if b < a: a, b = b, a
-    if c < b: b, c = c, b
+    if c < b:
+        b, c = c, b
+    if b < a:
+        a, b = b, a
+    if c < b:
+        b, c = c, b
     return a + c
 
 
