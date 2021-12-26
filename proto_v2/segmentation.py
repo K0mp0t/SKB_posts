@@ -135,7 +135,7 @@ def get_empty_areas(mask, areas_count=1, scale=1):
     Parameters:
         mask (:obj:`np.array`): The first parameter.
         areas_count (:obj:`int`, optional): The second parameter. Defaults to 1.
-
+        scale:
     Return:
         list: ((pos_x, pos_y), (size_x, size_y)).
     """

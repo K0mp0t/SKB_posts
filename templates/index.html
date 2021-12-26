@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Index{% endblock title %}
+{% block main %}
+    <h2><a href="{{ url_for('generate') }}">Generation page</a></h2>
+    <h2>'/generate: accepts POST requests with json dict {"image": base64, "text": string}'</h2>
+{% endblock main %}

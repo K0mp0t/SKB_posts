@@ -346,8 +346,8 @@ def get_interview_image_text(text, fonts_root, image_size=(1080, 1080), text_rel
     )
 
     max_line_width = sorted(lines_sizes, key=(lambda line: line[0]), reverse=True)[0][0]
-    lines_height = sum([line_size[1] for line_size in lines_sizes]) \
-                   + line_spacing * (len(lines_sizes) - 1) + text_outline_offset * 2
+    lines_height = sum([line_size[1] for line_size in lines_sizes]) + line_spacing * (len(lines_sizes) - 1) + \
+                   text_outline_offset * 2
 
     text_box = round(max_line_width / 8), round(image_size[1] - lines_height * text_y_offset)
 

@@ -96,8 +96,8 @@ def generate():
 
 
 @app.route('/')
-def print_paths():
-    return '/generate: accepts POST requests with json dict {"image": base64, "text": string}'
+def index():
+    return render_template('index.html')
 
 
 if __name__ == '__main__':
