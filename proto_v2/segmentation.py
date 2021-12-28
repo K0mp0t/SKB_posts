@@ -153,10 +153,13 @@ def get_empty_areas(mask, areas_count=1, scale=1):
         if scaled_size[0] == 0 or scaled_size[1] == 0:  # TODO: add a better filter for scaled size
             break
 
-        result.append(((scaled_pos[1], scaled_pos[0]), (scaled_size[1], scaled_size[0])))
-
         for x in range(pos[1], pos[1] + size[1]):
             for y in range(pos[0], pos[0] + size[0]):
                 img[y, x] = 1
+
+        if scaled_size[0] < 25 or scaled_size[1] < 25:
+            continue
+
+        result.append(((scaled_pos[1], scaled_pos[0]), (scaled_size[1], scaled_size[0])))
 
     return result

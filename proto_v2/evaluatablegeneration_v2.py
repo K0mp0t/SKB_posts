@@ -59,8 +59,14 @@ def generate_good_image(generator, model, threshold=0.5):
     """
     y_pred = 0
     img = None
+    iterations = 0
 
     while y_pred < threshold:
+        iterations += 1
+
+        if iterations > 10:
+            break
+
         img = next(generator)
         x = alpha_to_color(img)
         x = resize_image_with_pad(x, model.input_shape[1: 3])
