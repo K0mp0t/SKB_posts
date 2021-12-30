@@ -45,9 +45,9 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
         for i in range(len(genImage.empty_areas[crop_index])):
             (pos_x, pos_y), (size_x, size_y) = genImage.empty_areas[crop_index][i]
             available_size = (size_x * max_fill, size_y * max_fill)
-            min_fig_size = min(size_x, size_y) // 2.5
-            max_fig_size = min(size_x, size_y) // 2.5 + 5
-            fig_cnt = int(max(available_size) // (np.average([min_fig_size, max_fig_size]))) / 5
+            min_fig_size = min(size_x, size_y) // 5
+            max_fig_size = min(size_x, size_y) // 5 + 5
+            fig_cnt = int(max(available_size) // (np.average([min_fig_size, max_fig_size]))) / 4
             new_areas.append([(pos_x, pos_y), (size_x, size_y), (min_fig_size, max_fig_size, fig_cnt)])
 
         forms = []
@@ -60,11 +60,11 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                 fig_size_range=(min_fig_size, max_fig_size),
                 threshold=threshold))
 
-        img_text, text_box = get_interview_image_text(text, genImage.fonts_root, text_y_offset=1.5)
+        img_text, text_box = get_interview_image_text(text, genImage.fonts_root, text_y_offset=1)
 
         for form, area_info in zip(forms, new_areas):
             result.paste(form, area_info[0], form.convert('RGBA'))
-            result.paste(img_text, (text_pos_x, text_box[1]), img_text)
+        result.paste(img_text, (text_pos_x, text_box[1]-50), mask=img_text)
 
         results.append(result)
         crop_index += 1
@@ -77,7 +77,7 @@ def get_arrow_image_text(text, fonts_root, text_size=(860, 64),
                          max_font_size=72):
     text_width, text_height = text_size[0], text_size[1]
 
-    img_text, lines_sizes, line_spacing = get_image_text(
+    img_text, lines_sizes = get_image_text(
         text_width,
         text_height,
         text,
@@ -102,10 +102,10 @@ def create_pattern_vacancy(text, forms_root, fonts_root):
     result = Image.new("RGBA", (1080, 1080))
     bg = Image.open(os.path.join(forms_root, '1/vacancy_bg.png'))
     vacancy = Image.open(os.path.join(forms_root, '1/vacancy.png'))
-    img_text, lines_sizes, line_spacing = get_image_text(960, 450, text, fonts_root, font_type='b',
-                                                         color=(255, 255, 255), max_font_size=500)
+    img_text, lines_sizes = get_image_text(960, 450, text, fonts_root, font_type='b', color=(255, 255, 255),
+                                           max_font_size=500)
 
-    lower_bound = find_lower_bound_of_text(lines_sizes, line_spacing)
+    lower_bound = find_lower_bound_of_text(lines_sizes, int(lines_sizes[0][1]*1.2))
 
     result.paste(bg, box=(0, 0))
     result.paste(img_text, mask=img_text, box=(60, 375))
@@ -125,8 +125,8 @@ def create_pattern_vacancy_description(text, forms_root, fonts_root):
       """
     result = Image.new("RGBA", (1080, 1080), (255, 255, 255))
 
-    img_text, lines_sizes, line_spacing = get_image_text(900, 76, text[0], fonts_root, font_type='b', color=(0, 0, 0),
-                                                         max_font_size=64)
+    img_text, lines_sizes = get_image_text(900, 76, text[0], fonts_root, font_type='b', color=(0, 0, 0),
+                                           max_font_size=64)
     result.paste(img_text, mask=img_text, box=(90, 110))
 
     marker = Image.open(os.path.join(forms_root, 'cm_r_yel.png'))
@@ -135,8 +135,10 @@ def create_pattern_vacancy_description(text, forms_root, fonts_root):
 
     for i in text[1:]:
         result.paste(marker, mask=marker, box=(90, lower_bound))
-        img_text, lines_sizes, line_spacing = get_image_text(846, 192, i, fonts_root, color=(0, 0, 0), max_font_size=48)
+        img_text, lines_sizes = get_image_text(846, 192, i, fonts_root, color=(0, 0, 0), max_font_size=48)
         result.paste(img_text, mask=img_text, box=(144, lower_bound))
+
+        line_spacing = int(lines_sizes[0][1] * 1.2)
 
         lower_bound += find_lower_bound_of_text(lines_sizes, line_spacing)
         lower_bound += 64
@@ -185,8 +187,11 @@ def create_pattern_checkmarks(genImage):
         result = used_img.copy()
         result.paste(used_img, mask=filtered_mask)
 
-        img_text, lines_sizes, line_spacing = get_image_text(780, 172, genImage.text, genImage.fonts_root,
-                                                             font_type='b', color=(255, 255, 255), max_font_size=72)
+        img_text, lines_sizes = get_image_text(780, 172, genImage.text, genImage.fonts_root, font_type='b',
+                                               color=(255, 255, 255), max_font_size=72)
+
+        line_spacing = int(lines_sizes[0][1] * 1.2)
+
         lower_bound_text = find_lower_bound_of_text(lines_sizes, line_spacing)
         result.paste(img_text, mask=img_text, box=(110, 1080 - 60 - lower_bound_text))
 
@@ -225,14 +230,12 @@ def create_pattern_header_at_top_checkmarks(text, forms_root, fonts_root, color=
         t1 = t2
         flag = False
 
-    img_text1, lines_sizes1, line_spacing1 = get_image_text(860, 106, t1, fonts_root, font_type='b', color=(0, 0, 0),
-                                                            max_font_size=90)
+    img_text1, lines_sizes1 = get_image_text(860, 106, t1, fonts_root, font_type='b', color=(0, 0, 0), max_font_size=90)
     result.paste(img_text1, mask=img_text1, box=(110, 110))
 
     if flag:
-        img_text2, lines_sizes2, line_spacing2 = get_image_text(860, 106, t2, fonts_root, font_type='b',
-                                                                color=(0, 170, 19) if color == 'g' else (255, 117, 0),
-                                                                max_font_size=90)
+        img_text2, lines_sizes2 = get_image_text(860, 106, t2, fonts_root, font_type='b', color=(0, 170, 19)
+                                                 if color == 'g' else (255, 117, 0), max_font_size=90)
         result.paste(img_text2, mask=img_text2, box=(110, lines_sizes1[0][1] + 110))
 
     checkmarks = Image.open(os.path.join(forms_root, f'1/checkmarks_big_{color}.png'))
@@ -269,22 +272,19 @@ def create_pattern_interview_text(text, forms_root, fonts_root, color='g'):
 
     result = Image.new("RGBA", (1080, 1080), (255, 255, 255))
 
-    img_text, lines_sizes1, line_spacing1 = get_image_text(1330, 1000, text[0][:2], fonts_root, font_type='b',
-                                                           color=(151, 215, 0, 30) if color == 'g'
-                                                           else (255, 117, 0, 30),
-                                                           max_font_size=1000)
+    img_text, lines_sizes1 = get_image_text(1330, 1000, text[0][:2], fonts_root, font_type='b', color=(151, 215, 0, 30)
+                                            if color == 'g' else (255, 117, 0, 30), max_font_size=1000)
     result.paste(img_text, mask=img_text, box=(-100, -287))
 
-    img_text, lines_sizes1, line_spacing1 = get_image_text(860, 76, text[0], fonts_root, font_type='b', color=(0, 0, 0),
-                                                           max_font_size=64)
+    img_text, lines_sizes1 = get_image_text(860, 76, text[0], fonts_root, font_type='b', color=(0, 0, 0),
+                                            max_font_size=64)
     result.paste(img_text, mask=img_text, box=(110, 110))
 
-    img_text, lines_sizes1, line_spacing1 = get_image_text(860, 912, text[1], fonts_root, color=(0, 0, 0),
-                                                           max_font_size=52)
+    img_text, lines_sizes1 = get_image_text(860, 912, text[1], fonts_root, color=(0, 0, 0), max_font_size=52)
     result.paste(img_text, mask=img_text, box=(110, 186))
 
     double_checkmarks = create_double_checkmarks(color, forms_root)
-    print(double_checkmarks)
+
     result.paste(double_checkmarks, mask=double_checkmarks, box=(891, 1181))
 
     return [result]
@@ -330,12 +330,11 @@ def get_color_mask_image(img, mask, mask_offset=40,
 
 
 def get_interview_image_text(text, fonts_root, image_size=(1080, 1080), text_relative_size=(0.8, 0.2),
-                             color=(255, 255, 255), text_outline_offset=10, max_font_size=200,
+                             color=(255, 255, 255), text_outline_offset=10, max_font_size=90,
                              text_y_offset=2.0):
-    text_width, text_height = round(image_size[0] * text_relative_size[0]), \
-                              round(image_size[1] * text_relative_size[1])
+    text_width, text_height = round(image_size[0] * text_relative_size[0]), round(image_size[1] * text_relative_size[1])
 
-    img_text, lines_sizes, line_spacing = get_image_text(
+    img_text, lines_sizes = get_image_text(
         text_width,
         text_height,
         text,
@@ -346,8 +345,7 @@ def get_interview_image_text(text, fonts_root, image_size=(1080, 1080), text_rel
     )
 
     max_line_width = sorted(lines_sizes, key=(lambda line: line[0]), reverse=True)[0][0]
-    lines_height = sum([line_size[1] for line_size in lines_sizes]) + line_spacing * (len(lines_sizes) - 1) + \
-                   text_outline_offset * 2
+    lines_height = sum([line_size[1]*1.2 for line_size in lines_sizes]) + text_outline_offset * 2
 
     text_box = round(max_line_width / 8), round(image_size[1] - lines_height * text_y_offset)
 

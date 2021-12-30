@@ -157,7 +157,7 @@ def get_empty_areas(mask, areas_count=1, scale=1):
             for y in range(pos[0], pos[0] + size[0]):
                 img[y, x] = 1
 
-        if scaled_size[0] < 25 or scaled_size[1] < 25:
+        if scaled_size[0] < 100 or scaled_size[1] < 100:
             continue
 
         result.append(((scaled_pos[1], scaled_pos[0]), (scaled_size[1], scaled_size[0])))
