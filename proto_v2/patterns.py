@@ -103,7 +103,7 @@ def create_pattern_vacancy(text, forms_root, fonts_root):
     bg = Image.open(os.path.join(forms_root, '1/vacancy_bg.png'))
     vacancy = Image.open(os.path.join(forms_root, '1/vacancy.png'))
     img_text, lines_sizes = get_image_text(960, 450, text, fonts_root, font_type='b', color=(255, 255, 255),
-                                           max_font_size=500)
+                                           max_font_size=100)
 
     lower_bound = find_lower_bound_of_text(lines_sizes, int(lines_sizes[0][1]*1.2))
 

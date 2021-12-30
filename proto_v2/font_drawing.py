@@ -55,7 +55,6 @@ class ImageText(object):
         if y == 'center':
             y = (self.size[1] - text_size[1]) / 2
         self.draw.text((x, y), text, font=font, fill=color)
-        return text_size
 
     def write_text_box(self, x, y, text, box_width, box_height, font_filename, line_spacing=16,
                        font_size=72, line_spacing_coef=0.2, color=(0, 0, 0), place='left', justify_last_line=False):
@@ -78,20 +77,16 @@ class ImageText(object):
                         font_size -= 1
                         fitting_failed = True
                         break
-                    lines_sizes.append((size[0], size[1]))
                     line = [word]
             size = get_text_size(font_filename, font_size, ' '.join(line))
             text_height = size[1]
-
             if fitting_failed:
                 continue
-            if line:
-                lines.append(line)
-                size = get_text_size(font_filename, font_size, ' '.join(line))
-                lines_sizes.append((size[0], size[1]))
             if size[0] > box_width or len(lines) * text_height > box_height:
                 font_size -= 1
                 continue
+            if line:
+                lines.append(line)
             break
         while len(lines) * text_height + (len(lines) - 1) * line_spacing > box_height:
             text_height = get_text_size(font_filename, font_size, text)[1]
@@ -100,6 +95,8 @@ class ImageText(object):
         lines = [' '.join(line) for line in lines if line]
         height = y - line_spacing - text_height
         for index, line in enumerate(lines):
+            size = get_text_size(font_filename, font_size, line)
+            lines_sizes.append((size[0], size[1]))
             height += (text_height + line_spacing)
             if place == 'left':
                 self.write_text(x, height, line, font_filename, font_size, color)
@@ -146,7 +143,7 @@ def get_image_text(width, height, text, fonts_root, font_type='b', max_font_size
           bg_color (:obj:`tuple`): Background color (r, g, b). Defaults to (0, 0, 0).
 
         Returns:
-          PIL Image (:obj:`PIL.Image.Image`), Lines Sizes (:obj:`tuple`), Line Spacing (:obj:`int`)
+          PIL Image (:obj:`PIL.Image.Image`), Lines Sizes (:obj:`tuple`)
     """
     img = ImageText((width, height), background=(255, 255, 255, 0))
     img_back = None
@@ -170,14 +167,12 @@ def get_image_text(width, height, text, fonts_root, font_type='b', max_font_size
         line_x, line_y = offset, offset
 
         for size in lines_sizes:
-            line_spacing = int(size[1] * line_spacing_coef)
-
             draw.rectangle(
                 [(line_x - offset, line_y - offset - size[1] * line_spacing_coef),
                  (size[0] + line_x + offset, line_y + size[1] * (line_spacing_coef + 1))],
                 fill=bg_color
             )
-            line_y += size[1] + line_spacing
+            line_y += int(size[1] * (1 + line_spacing_coef))
 
         img_back.alpha_composite(img.image, (offset, offset))
 
