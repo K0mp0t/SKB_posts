@@ -101,7 +101,7 @@ def get_points(obj_coordinates, size, center_image, basesize, center):
     first = max(center) - (basesize // 3)
     mid = max(center) - basesize // 2
     third = max(center) - (2 * basesize // 3)
-    print(first, mid, third)
+
     if mid < 0:
         mid = 0
     elif mid > obj_coordinates[0] or mid + basesize < obj_coordinates[1]:
@@ -125,7 +125,6 @@ def get_points(obj_coordinates, size, center_image, basesize, center):
     if third + basesize > max(size):
         third = max(size) - basesize
 
-    print(first, mid, third)
     return int(first), int(mid), int(third)
 
 

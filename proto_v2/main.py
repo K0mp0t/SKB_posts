@@ -40,7 +40,7 @@ class GenImage:
         self.scale = image_enhance.get_scale(self.image, self.mask)
 
         obj_coordinates = image_enhance.get_object_coordinates(self.mask)
-        if self.image.size[0] > self.image.size[1]:
+        if self.image.size[1] > self.image.size[0]:
             self.obj_coordinates = obj_coordinates[:2]
         else:
             self.obj_coordinates = obj_coordinates[2:]
@@ -109,7 +109,6 @@ class GenImage:
         return self.mask
 
     def crop_image(self, center_image=True):
-        print(self.obj_coordinates)
         self.croped_images = image_enhance.crop_by_sqare(mask=self.mask, coordinates=self.obj_coordinates,
                                                          img=self.image, center_image=center_image, scale=self.scale)
         self.croped_masks = image_enhance.crop_by_sqare(mask=self.mask, coordinates=self.obj_coordinates,
