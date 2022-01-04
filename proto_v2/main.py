@@ -38,6 +38,13 @@ class GenImage:
         self.faces_on_croped = None
         self.comp_colors = None
         self.scale = image_enhance.get_scale(self.image, self.mask)
+
+        obj_coordinates = image_enhance.get_object_coordinates(self.mask)
+        if self.image.size[0] > self.image.size[1]:
+            self.obj_coordinates = obj_coordinates[:2]
+        else:
+            self.obj_coordinates = obj_coordinates[2:]
+
         self.crop_image()
         self.get_empty_areas_on_croped(5)
         # self.det_faces()
@@ -102,9 +109,11 @@ class GenImage:
         return self.mask
 
     def crop_image(self, center_image=True):
-        self.croped_images = image_enhance.crop_by_sqare(self.mask, self.image,
-                                                         center_image=center_image, scale=self.scale)
-        self.croped_masks = image_enhance.crop_by_sqare(self.mask, center_image=center_image, scale=self.scale)
+        print(self.obj_coordinates)
+        self.croped_images = image_enhance.crop_by_sqare(mask=self.mask, coordinates=self.obj_coordinates,
+                                                         img=self.image, center_image=center_image, scale=self.scale)
+        self.croped_masks = image_enhance.crop_by_sqare(mask=self.mask, coordinates=self.obj_coordinates,
+                                                        center_image=center_image, scale=self.scale)
 
     def get_empty_areas_on_croped(self, count):
         self.empty_areas = []

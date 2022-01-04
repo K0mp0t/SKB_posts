@@ -49,9 +49,6 @@ class Enhancer:
         return img
 
 
-basesize = 1080
-
-
 def get_mean(mask):
     """
      Parameters:
@@ -81,10 +78,16 @@ def get_scale(img, mask):
     return scale
 
 
-def get_points(mask, size, center_image, basesize, center):
+def get_object_coordinates(object_mask):
+    nonzero_indices = object_mask.nonzero()
+
+    return [nonzero_indices[0].min(), nonzero_indices[0].max(), nonzero_indices[1].min(), nonzero_indices[1].max()]
+
+
+def get_points(obj_coordinates, size, center_image, basesize, center):
     """
     Parameters:
-      mask
+      obj_coordinates:
       size: size of image or mask
       center_image (bool): use center of image as mean
       basesize
@@ -95,29 +98,42 @@ def get_points(mask, size, center_image, basesize, center):
     if center_image:
         center = (size[0] // 2, size[1] // 2)
 
+    first = max(center) - (basesize // 3)
     mid = max(center) - basesize // 2
+    third = max(center) - (2 * basesize // 3)
+    print(first, mid, third)
     if mid < 0:
         mid = 0
-    elif mid + basesize > max(size):
-        mid = max(size) - basesize
+    elif mid > obj_coordinates[0] or mid + basesize < obj_coordinates[1]:
+        mid = (sum(obj_coordinates) / 2) - (basesize // 2)
+        if mid > obj_coordinates[0]:
+            mid -= obj_coordinates[0] - 50
+        elif mid + basesize < obj_coordinates[1]:
+            mid += basesize - obj_coordinates[1] + 50
 
-    first = max(center) - (basesize // 3)
     if first < 0:
         first = 0
-    elif first + basesize > max(size):
+    elif first > obj_coordinates[0]:
+        first = obj_coordinates[0]
+    if first + basesize > max(size):
         first = max(size) - basesize
 
-    thrid = max(center) - (2 * basesize // 3)
-    if thrid < 0:
-        thrid = 0
-    elif thrid + basesize > max(size):
-        thrid = max(size) - basesize
-    return int(first), int(mid), int(thrid)
+    if third < 0:
+        third = 0
+    elif third > obj_coordinates[0]:
+        third = obj_coordinates[0]
+    if third + basesize > max(size):
+        third = max(size) - basesize
+
+    print(first, mid, third)
+    return int(first), int(mid), int(third)
 
 
-def crop_by_sqare(mask, img=None, center_image: bool = False, scale=1):
+def crop_by_sqare(mask, coordinates=None, img=None, center_image: bool = False, scale=1, basesize=1080):
     """
     Parameters:
+      coordinates:
+      basesize:
       mask
       img (optioal): optioal
       center_image (bool): use center of image as mean
@@ -127,25 +143,26 @@ def crop_by_sqare(mask, img=None, center_image: bool = False, scale=1):
     """
     mean = get_mean(mask)
     if img is not None:
+        coordinates = [int(x * scale) for x in coordinates]
         center = (mean[1] * scale, mean[0] * scale)
-        first, mid, thrid = get_points(mask, img.size[:2], center_image, 1080, center)
+        first, mid, third = get_points(coordinates, img.size[:2], center_image, basesize, center)
         if img.size[0] >= img.size[1]:
             return (img.crop((first, 0, first + basesize, basesize)),
                     img.crop((mid, 0, mid + basesize, basesize)),
-                    img.crop((thrid, 0, thrid + basesize, basesize)))
+                    img.crop((third, 0, third + basesize, basesize)))
         else:
             return (img.crop((0, first, basesize, first + basesize)),
                     img.crop((0, mid, basesize, mid + basesize)),
-                    img.crop((0, thrid, basesize, thrid + basesize)))
+                    img.crop((0, third, basesize, third + basesize)))
     else:
-        scaled_basesize = int(basesize // scale)
-        center = (mean[1], mean[0])
-        first, mid, thrid = get_points(mask, (mask.shape[1], mask.shape[0]), center_image, scaled_basesize, center)
+        scaled_basesize = int(basesize / scale)
+        center = (mean[1] * scale, mean[0] * scale)
+        first, mid, third = get_points(coordinates, (mask.shape[1], mask.shape[0]), center_image, scaled_basesize, center)
         if mask.shape[1] >= mask.shape[0]:
             return (mask[0:scaled_basesize, first:first + scaled_basesize],
                     mask[0:scaled_basesize, mid:mid + scaled_basesize],
-                    mask[0:scaled_basesize, thrid:thrid + scaled_basesize])
+                    mask[0:scaled_basesize, third:third + scaled_basesize])
         else:
             return (mask[first:first + scaled_basesize, 0:scaled_basesize],
                     mask[mid:mid + scaled_basesize, 0:scaled_basesize],
-                    mask[thrid:thrid + scaled_basesize, 0:scaled_basesize])
+                    mask[third:third + scaled_basesize, 0:scaled_basesize])

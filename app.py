@@ -6,6 +6,8 @@ import json
 from proto_v2 import main
 from tensorflow.python.keras.models import load_model
 import time
+import psutil
+import os
 
 app = Flask(__name__, static_folder='static')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -15,6 +17,8 @@ ESTIMATOR = load_model('proto_v2/effnet_model/efficientnetB3_0.77.h5')
 FORMS_ROOT = 'proto_v2/forms_processed'
 FONTS_ROOT = 'proto_v2/Fonts'
 SEG_MODEL_PATH = 'proto_v2/mobile_net_model'
+
+process = psutil.Process(os.getpid())
 
 
 def generate_images(img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
@@ -35,6 +39,7 @@ def generate_images_sequentially(img_bytes, estimator, forms_root, fonts_root, s
 
 @app.route('/generate', methods=['GET', 'POST', 'OPTIONS'])
 def generate():
+    print(f'Mem usage on call: {process.memory_info().rss / 1024 // 1024} MB')
     if request.method == 'POST':
         if request.json:
             if 'text' not in request.json or 'image' not in request.json:
@@ -83,6 +88,8 @@ def generate():
                 img_arr.seek(0)
 
                 encoded_images.append(b64encode(img_arr.getvalue()).decode('utf-8'))
+
+            print(f'Mem usage before return: {process.memory_info().rss / 1024 // 1024} MB')
 
             return render_template('gen_output_page.html', encoded_images=encoded_images, end=end)
     elif request.method == 'OPTIONS':

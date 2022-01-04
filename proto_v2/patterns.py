@@ -35,8 +35,7 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
             bg.paste(cropped, box=(x, 0))
 
             used_mask[used_mask != 0] = 255
-            filtered_mask = (Image.fromarray(used_mask.astype(np.uint8)).resize((1080, 1080))).filter(
-                ImageFilter.SMOOTH)
+            filtered_mask = Image.fromarray(used_mask.astype(np.uint8)).resize((1080, 1080)).filter(ImageFilter.SMOOTH)
 
             result.paste(bg, mask=bg)
             result.paste(used_img, mask=filtered_mask)
@@ -46,8 +45,16 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
             (pos_x, pos_y), (size_x, size_y) = genImage.empty_areas[crop_index][i]
             available_size = (size_x * max_fill, size_y * max_fill)
             min_fig_size = min(size_x, size_y) // 5
-            max_fig_size = min(size_x, size_y) // 5 + 5
-            fig_cnt = int(max(available_size) // (np.average([min_fig_size, max_fig_size]))) / 4
+
+            if min_fig_size < 30:
+                min_fig_size = 30
+
+            max_fig_size = min_fig_size + 5
+            fig_cnt = max(available_size) // (np.average([min_fig_size, max_fig_size])) // 2
+
+            if fig_cnt < 2:
+                continue
+
             new_areas.append([(pos_x, pos_y), (size_x, size_y), (min_fig_size, max_fig_size, fig_cnt)])
 
         forms = []
@@ -57,6 +64,7 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                 model=model,
                 forms_root=genImage.forms_root,
                 fig_count=fig_cnt,
+                forms_type='t',
                 fig_size_range=(min_fig_size, max_fig_size),
                 threshold=threshold))
 
@@ -103,7 +111,7 @@ def create_pattern_vacancy(text, forms_root, fonts_root):
     bg = Image.open(os.path.join(forms_root, '1/vacancy_bg.png'))
     vacancy = Image.open(os.path.join(forms_root, '1/vacancy.png'))
     img_text, lines_sizes = get_image_text(960, 450, text, fonts_root, font_type='b', color=(255, 255, 255),
-                                           max_font_size=100)
+                                           max_font_size=200)
 
     lower_bound = find_lower_bound_of_text(lines_sizes, int(lines_sizes[0][1]*1.2))
 
@@ -363,7 +371,7 @@ def gen_interview_pattern(genImage, pattern_type='round', cropped_image_index=1,
         # else:
         #     face_size = None
         #     mask_offset = 80
-        face_size = 150
+        face_size = 120
         img_with_mask = get_round_mask_image(img, face_size, mask_offset)
     else:
         mask = genImage.croped_masks[cropped_image_index].astype('uint8')
