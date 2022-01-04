@@ -104,12 +104,10 @@ def get_points(obj_coordinates, size, center_image, basesize, center):
 
     if mid < 0:
         mid = 0
-    elif mid > obj_coordinates[0] or mid + basesize < obj_coordinates[1]:
-        mid = (sum(obj_coordinates) / 2) - (basesize // 2)
-        if mid > obj_coordinates[0]:
-            mid -= obj_coordinates[0] - 50
-        elif mid + basesize < obj_coordinates[1]:
-            mid += basesize - obj_coordinates[1] + 50
+    elif mid > obj_coordinates[0]:
+        mid = obj_coordinates[0]
+    if mid + basesize > max(size):
+        mid = max(size) - basesize
 
     if first < 0:
         first = 0
@@ -142,8 +140,8 @@ def crop_by_sqare(mask, coordinates=None, img=None, center_image: bool = False, 
     """
     mean = get_mean(mask)
     if img is not None:
-        coordinates = [int(x * scale) for x in coordinates]
         center = (mean[1] * scale, mean[0] * scale)
+        coordinates = [int(x * scale) for x in coordinates]
         first, mid, third = get_points(coordinates, img.size[:2], center_image, basesize, center)
         if img.size[0] >= img.size[1]:
             return (img.crop((first, 0, first + basesize, basesize)),
