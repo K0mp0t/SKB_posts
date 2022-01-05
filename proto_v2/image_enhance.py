@@ -84,65 +84,40 @@ def get_object_coordinates(object_mask):
     return [nonzero_indices[0].min(), nonzero_indices[0].max(), nonzero_indices[1].min(), nonzero_indices[1].max()]
 
 
-def get_points(obj_coordinates, size, center_image, basesize, center):
+def get_points(obj_coordinates, size, basesize):
     """
     Parameters:
       obj_coordinates:
       size: size of image or mask
-      center_image (bool): use center of image as mean
       basesize
-      center: overrides if center_image is True
     Return:
       three upper left point of thirds 
     """
-    if center_image:
-        center = (size[0] // 2, size[1] // 2)
+    first = obj_coordinates[0] + basesize // 20
+    mid = obj_coordinates[0] / 2
+    third = obj_coordinates[1] - basesize // 20 * 18
 
-    first = max(center) - (basesize // 3)
-    mid = max(center) - basesize // 2
-    third = max(center) - (2 * basesize // 3)
-
-    if mid < 0:
-        mid = 0
-    elif mid > obj_coordinates[0]:
-        mid = obj_coordinates[0]
-    if mid + basesize > max(size):
-        mid = max(size) - basesize
-
-    if first < 0:
-        first = 0
-    elif first > obj_coordinates[0]:
-        first = obj_coordinates[0]
-    if first + basesize > max(size):
-        first = max(size) - basesize
-
-    if third < 0:
+    if third < 0 or third + basesize > max(size):
         third = 0
-    elif third > obj_coordinates[0]:
-        third = obj_coordinates[0]
-    if third + basesize > max(size):
-        third = max(size) - basesize
 
     return int(first), int(mid), int(third)
 
 
-def crop_by_sqare(mask, coordinates=None, img=None, center_image: bool = False, scale=1, basesize=1080):
+def crop_by_sqare(mask, coordinates=None, img=None, scale=1, basesize=1080):
     """
     Parameters:
       coordinates:
       basesize:
       mask
       img (optioal): optioal
-      center_image (bool): use center of image as mean
       scale: scale of image to mask
     Return:
       tuple of images croped by thirds
     """
     mean = get_mean(mask)
     if img is not None:
-        center = (mean[1] * scale, mean[0] * scale)
         coordinates = [int(x * scale) for x in coordinates]
-        first, mid, third = get_points(coordinates, img.size[:2], center_image, basesize, center)
+        first, mid, third = get_points(coordinates, img.size[:2],  basesize)
         if img.size[0] >= img.size[1]:
             return (img.crop((first, 0, first + basesize, basesize)),
                     img.crop((mid, 0, mid + basesize, basesize)),
@@ -153,8 +128,7 @@ def crop_by_sqare(mask, coordinates=None, img=None, center_image: bool = False, 
                     img.crop((0, third, basesize, third + basesize)))
     else:
         scaled_basesize = int(basesize / scale)
-        center = (mean[1] * scale, mean[0] * scale)
-        first, mid, third = get_points(coordinates, (mask.shape[1], mask.shape[0]), center_image, scaled_basesize, center)
+        first, mid, third = get_points(coordinates, (mask.shape[1], mask.shape[0]), scaled_basesize)
         if mask.shape[1] >= mask.shape[0]:
             return (mask[0:scaled_basesize, first:first + scaled_basesize],
                     mask[0:scaled_basesize, mid:mid + scaled_basesize],

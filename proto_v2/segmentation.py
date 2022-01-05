@@ -130,6 +130,23 @@ def max_rectangle_size(histogram):
 def area(size): return size[0] * size[1]
 
 
+def split_rectangle(pos, size):
+    if size[0] // size[1] == 1 or size[1] // size[0] == 1:
+        return [pos, size]
+
+    else:
+        result = list()
+
+        if size[0] > size[1]:
+            for i in range(size[0] // size[1]):
+                result.append(((pos[1], pos[0]+i*size[1]), (size[1], size[1])))
+        else:
+            for i in range(size[1] // size[0]):
+                result.append(((pos[1]+i*size[0], pos[0]), (size[0], size[0])))
+
+    return result
+
+
 def get_empty_areas(mask, areas_count=1, scale=1):
     """
     Parameters:
@@ -150,7 +167,7 @@ def get_empty_areas(mask, areas_count=1, scale=1):
         size, pos = max_size(img)
         scaled_size, scaled_pos = list(map(scale_and_int, size)), list(map(scale_and_int, pos))
 
-        if scaled_size[0] == 0 or scaled_size[1] == 0:  # TODO: add a better filter for scaled size
+        if scaled_size[0] == 0 or scaled_size[1] == 0:
             break
 
         for x in range(pos[1], pos[1] + size[1]):
@@ -160,6 +177,6 @@ def get_empty_areas(mask, areas_count=1, scale=1):
         if scaled_size[0] < 100 or scaled_size[1] < 100:
             continue
 
-        result.append(((scaled_pos[1], scaled_pos[0]), (scaled_size[1], scaled_size[0])))
+        result.extend(split_rectangle(scaled_pos, scaled_size))
 
     return result

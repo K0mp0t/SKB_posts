@@ -2,11 +2,12 @@ from PIL import ImageFilter
 import random
 from .font_drawing import *
 from .evaluatablegeneration_v2 import *
+import random
 
 
 def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                        color=(0, 0, 0), text_outline_offset=0,
-                       max_font_size=72, text_pos_x=100, max_fill=0.6,
+                       max_font_size=72, text_pos_x=100, max_fill=0.75,
                        threshold=0.6):
     results = []
     text = genImage.text
@@ -43,19 +44,20 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
         new_areas = []
         for i in range(len(genImage.empty_areas[crop_index])):
             (pos_x, pos_y), (size_x, size_y) = genImage.empty_areas[crop_index][i]
-            available_size = (size_x * max_fill, size_y * max_fill)
-            min_fig_size = min(size_x, size_y) // 5
+            available_size = size_x * max_fill
+            min_fig_size = min(size_x, size_y) // 4
 
             if min_fig_size < 30:
                 min_fig_size = 30
 
             max_fig_size = min_fig_size + 5
-            fig_cnt = max(available_size) // (np.average([min_fig_size, max_fig_size])) // 2
+            fig_cnt = available_size // min_fig_size
 
             if fig_cnt < 2:
                 continue
 
-            new_areas.append([(pos_x, pos_y), (size_x, size_y), (min_fig_size, max_fig_size, fig_cnt)])
+            if random.random() < max_fill:
+                new_areas.append([(pos_x, pos_y), (size_x, size_y), (min_fig_size, max_fig_size, fig_cnt)])
 
         forms = []
         for (_, _), (size_x, size_y), (min_fig_size, max_fig_size, fig_cnt) in new_areas:

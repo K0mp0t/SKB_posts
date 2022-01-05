@@ -108,11 +108,11 @@ class GenImage:
         _, self.mask = segmentation.seg(self.image_bytes, self.seg_model_path)
         return self.mask
 
-    def crop_image(self, center_image=True):
+    def crop_image(self):
         self.croped_images = image_enhance.crop_by_sqare(mask=self.mask, coordinates=self.obj_coordinates,
-                                                         img=self.image, center_image=center_image, scale=self.scale)
+                                                         img=self.image, scale=self.scale)
         self.croped_masks = image_enhance.crop_by_sqare(mask=self.mask, coordinates=self.obj_coordinates,
-                                                        center_image=center_image, scale=self.scale)
+                                                        scale=self.scale)
 
     def get_empty_areas_on_croped(self, count):
         self.empty_areas = []
