@@ -97,8 +97,20 @@ def get_points(obj_coordinates, size, basesize):
     mid = obj_coordinates[0] / 2
     third = obj_coordinates[1] - basesize // 20 * 18
 
-    if third < 0 or third + basesize > max(size):
+    if first < 0:
+        first = 0
+    elif first + basesize > max(size):
+        first = max(size) - basesize
+
+    if mid < 0:
+        mid = 0
+    elif mid + basesize > max(size):
+        mid = max(size) - basesize
+
+    if third < 0:
         third = 0
+    elif third + basesize > max(size):
+        third = max(size) - basesize
 
     return int(first), int(mid), int(third)
 

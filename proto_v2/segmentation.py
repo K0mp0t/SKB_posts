@@ -131,12 +131,13 @@ def area(size): return size[0] * size[1]
 
 
 def split_rectangle(pos, size):
+    result = list()
+
     if size[0] // size[1] == 1 or size[1] // size[0] == 1:
-        return [pos, size]
+        result.append(((pos[1], pos[0]), (size[1], size[0])))
+        return result
 
     else:
-        result = list()
-
         if size[0] > size[1]:
             for i in range(size[0] // size[1]):
                 result.append(((pos[1], pos[0]+i*size[1]), (size[1], size[1])))

@@ -7,3 +7,4 @@ Pillow==8.4.0
 requests==2.26.0
 keras==2.6.*
 tensorflow==2.6.0
+psutil==5.9.0

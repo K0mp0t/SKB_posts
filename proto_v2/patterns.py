@@ -1,5 +1,4 @@
 from PIL import ImageFilter
-import random
 from .font_drawing import *
 from .evaluatablegeneration_v2 import *
 import random
@@ -42,6 +41,7 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
             result.paste(used_img, mask=filtered_mask)
 
         new_areas = []
+
         for i in range(len(genImage.empty_areas[crop_index])):
             (pos_x, pos_y), (size_x, size_y) = genImage.empty_areas[crop_index][i]
             available_size = size_x * max_fill
