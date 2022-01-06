@@ -1,4 +1,5 @@
 from PIL import ImageEnhance
+import numpy as np
 
 
 class Enhancer:
@@ -80,6 +81,8 @@ def get_scale(img, mask):
 
 def get_object_coordinates(object_mask):
     nonzero_indices = object_mask.nonzero()
+    if any(x.size == 0 for x in nonzero_indices):
+        return list([0, 0, object_mask.shape[0], object_mask.shape[1]])
 
     return [nonzero_indices[0].min(), nonzero_indices[0].max(), nonzero_indices[1].min(), nonzero_indices[1].max()]
 
