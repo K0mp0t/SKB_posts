@@ -2,6 +2,7 @@ import io
 from functools import partial
 from proto_v2 import comp_colors, image_enhance, patterns, segmentation
 from PIL import Image
+import time
 
 
 class GenImage:
@@ -75,9 +76,13 @@ class GenImage:
                                partial(patterns.gen_interview_pattern, self),
                                partial(patterns.gen_interview_pattern, self, pattern_type='color')]
 
-        for pattern in generation_patterns:
-            for image in pattern():
-                yield image
+        c = 0
+
+        while c < 5:
+            c += 1
+            for pattern in generation_patterns:
+                for image in pattern():
+                    yield image
 
     def apply_all_enhance(self):
         self.original_image = self.image.copy()

@@ -1,5 +1,4 @@
 from PIL import ImageEnhance
-import numpy as np
 
 
 class Enhancer:
@@ -110,10 +109,8 @@ def get_points(obj_coordinates, size, basesize):
     elif mid + basesize > max(size):
         mid = max(size) - basesize
 
-    if third < 0:
+    if third < 0 or third + basesize > max(size):
         third = 0
-    elif third + basesize > max(size):
-        third = max(size) - basesize
 
     return int(first), int(mid), int(third)
 

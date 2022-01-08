@@ -1,4 +1,5 @@
-from flask import Flask, request, abort, render_template, flash, redirect, Response
+import string
+from flask import Flask, request, render_template, Response, url_for, send_file
 from base64 import b64decode, b64encode
 from PIL import Image
 import io
@@ -8,6 +9,8 @@ from tensorflow.python.keras.models import load_model
 import time
 import psutil
 import os
+import random
+
 
 app = Flask(__name__, static_folder='static')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -20,21 +23,126 @@ SEG_MODEL_PATH = 'proto_v2/mobile_net_model'
 
 process = psutil.Process(os.getpid())
 
+GENERATORS = dict()
+TOKENS_LIFETIME = dict()
+TOKENS_INDICES = dict()
+
 
 def generate_images(img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
-    generator = main.GenImage(image_bytes=img_bytes,
-                              model=estimator, forms_root=forms_root, fonts_root=fonts_root,
+    generator = main.GenImage(image_bytes=img_bytes, model=estimator, forms_root=forms_root, fonts_root=fonts_root,
                               seg_model_path=seg_model_path, text=text)
 
     return generator.generate()
 
 
-def generate_images_sequentially(img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
-    generator = main.GenImage(image_bytes=img_bytes,
-                              model=estimator, forms_root=forms_root, fonts_root=fonts_root,
-                              seg_model_path=seg_model_path, text=text)
+def generate_token(length):
+    return ''.join(random.choice(string.ascii_letters+string.digits) for _ in range(length))
 
-    return generator.generate_image_by_image()
+
+def remove_token_resources(token):
+    del GENERATORS[token]
+    del TOKENS_LIFETIME[token]
+    del TOKENS_INDICES[token]
+
+    for fn in os.listdir(app.static_folder):
+        if token in fn:
+            os.remove(os.path.join(app.static_folder, fn))
+
+    del token
+
+
+def prune_tokens():
+    for fn in os.listdir(app.static_folder):
+        if fn.split('_')[0] not in GENERATORS:
+            os.remove(os.path.join(app.static_folder, fn))
+    for token, lifetime in TOKENS_LIFETIME.items():
+        if time.time() - lifetime > 300:
+            remove_token_resources(token)
+    while len(TOKENS_LIFETIME) > 15:
+        token = max(TOKENS_LIFETIME, key=TOKENS_LIFETIME.get)
+        remove_token_resources(token)
+
+
+@app.route('/api/remove-token')
+def remove_token():
+    token = request.args.get('token', default='*', type=str)
+
+    if token not in GENERATORS or token == '*':
+        return Response('invalid token', status=400)
+
+    remove_token_resources(token)
+
+    return Response(status=200)
+
+
+@app.route('/api/prolong-token')
+def prolong():
+    token = request.args.get('token', default='*', type=str)
+    TOKENS_LIFETIME[token] = time.time()
+
+    return Response(status=200)
+
+
+@app.route('/api/init', methods=['POST'])
+def init_generator():
+    prune_tokens()
+
+    if request.json:
+        if 'text' not in request.json or 'image' not in request.json:
+            return Response(status=400)
+        text = request.json.get('text', '')
+        if text == '':
+            return Response('recieved an empty string', status=400)
+        img_data = b64decode(request.json.get('image', ''))
+
+        if img_data == '*' or text == '*':
+            return Response('no image or text data', status=400)
+
+        generator = main.GenImage(image_bytes=io.BytesIO(img_data).getvalue(), model=ESTIMATOR, forms_root=FORMS_ROOT,
+                                  fonts_root=FONTS_ROOT, seg_model_path=SEG_MODEL_PATH, text=text)
+
+        token = generate_token(10)
+
+        GENERATORS[token] = generator.generate_image_by_image()
+        TOKENS_LIFETIME[token] = time.time()
+        TOKENS_INDICES[token] = 0
+
+        return Response(json.dumps({'token': token}), status=201)
+
+    return Response('no json recieved', status=400)
+
+
+@app.route('/api/getnextimage')
+def get_next_image():
+    token = request.args.get('token', default='*', type=str)
+    if token not in GENERATORS or token == '*':
+        return Response('invalid token', status=400)
+
+    generated_image = next(GENERATORS[token])
+    path = os.path.join('static', f'{token}_{TOKENS_INDICES[token]}.png')
+    generated_image.save(path)
+
+    TOKENS_INDICES[token] += 1
+
+    return Response(json.dumps({'url': path}), 200)
+
+
+# DEPRECIATED
+@app.route('/image')
+def display_single_image():
+    token = request.args.get('token', default='*', type=str)
+    index = request.args.get('index', default=-1, type=int)
+
+    if token not in GENERATORS or token == '*':
+        return Response('invalid token', status=400)
+    if TOKENS_INDICES[token] < index or index < 0:
+        return Response('invalid index', status=400)
+
+    if os.path.exists(os.path.join(app.static_folder, f'{token}_{index}.png')):
+
+        return send_file(os.path.join(app.static_folder, f'{token}_{index}.png'), mimetype='image/gif')
+    else:
+        return Response('image not found, but token and index seem to be ok', status=523)
 
 
 @app.route('/generate', methods=['GET', 'POST', 'OPTIONS'])
@@ -43,10 +151,10 @@ def generate():
     if request.method == 'POST':
         if request.json:
             if 'text' not in request.json or 'image' not in request.json:
-                abort(400)
+                return Response(status=400)
             text = request.json.get('text', '')
             if text == '':
-                abort(400)
+                return Response(status=400)
             img_data = b64decode(request.json.get('image', ''))
 
             images = generate_images(io.BytesIO(img_data).getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT,
@@ -68,8 +176,7 @@ def generate():
             file = request.files['file']
             text = request.form['text']
             if file.filename == '':
-                flash('No selected file')
-                return redirect(request.url)
+                return Response(status=400)
             img = Image.open(file)
 
             img_bytes = io.BytesIO()
@@ -108,4 +215,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=20210, debug=True)
+    app.run(host='localhost', port=20210, debug=True, use_reloader=False)
