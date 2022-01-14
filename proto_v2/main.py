@@ -31,7 +31,7 @@ class GenImage:
                                  'color_factor': 1,
                                  'sharpness_factor': 1}
 
-        self.generate_image_mask()
+        self.generate_image_mask(1)
 
         self.croped_images = None
         self.croped_masks = None
@@ -105,12 +105,12 @@ class GenImage:
         self.comp_colors = comp_colors.get_based_colors(base_colors, gcc)
         return self.comp_colors
 
-    def generate_image_mask(self):
+    def generate_image_mask(self, modelType=0):
         """
         Return:
           mask of key objects
         """
-        _, self.mask = segmentation.seg(self.image_bytes, self.seg_model_path)
+        _, self.mask = segmentation.seg(self.image_bytes, self.seg_model_path, modelType)
         return self.mask
 
     def crop_image(self):

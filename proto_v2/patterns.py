@@ -43,6 +43,7 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
         new_areas = []
 
         for i in range(len(genImage.empty_areas[crop_index])):
+            print(genImage.empty_areas[crop_index])
             (pos_x, pos_y), (size_x, size_y) = genImage.empty_areas[crop_index][i]
             available_size = size_x * max_fill
             min_fig_size = min(size_x, size_y) // 4
@@ -66,7 +67,7 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                 model=model,
                 forms_root=genImage.forms_root,
                 fig_count=fig_cnt,
-                forms_type='t',
+                forms_type='a',
                 fig_size_range=(min_fig_size, max_fig_size),
                 threshold=threshold))
 
