@@ -6,7 +6,7 @@ import random
 
 def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                        color=(0, 0, 0), text_outline_offset=0,
-                       max_font_size=72, text_pos_x=100, max_fill=0.75,
+                       max_font_size=72, text_pos_x=100, max_fill=0.5,
                        threshold=0.6):
     results = []
     text = genImage.text
@@ -43,7 +43,6 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
         new_areas = []
 
         for i in range(len(genImage.empty_areas[crop_index])):
-            print(genImage.empty_areas[crop_index])
             (pos_x, pos_y), (size_x, size_y) = genImage.empty_areas[crop_index][i]
             available_size = size_x * max_fill
             min_fig_size = min(size_x, size_y) // 4

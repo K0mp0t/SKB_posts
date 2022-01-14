@@ -50,12 +50,11 @@ class DeepLabModel(object):
         return resized_image, seg_map
 
 
-def seg(image_bytes, model_path, model_type=0):
+def seg(image_bytes, model):
     """remove background from image
     Parameters:
       image_bytes
-      model_path
-      model_type
+      model
     Return:
       Resized Image
       Mask
@@ -63,12 +62,6 @@ def seg(image_bytes, model_path, model_type=0):
     """
     if image_bytes is None:
         raise RuntimeError("Bad parameters. Please specify input file path and output file path")
-
-    modelType = "mobile_net_model"
-    if model_type == 1:
-        modelType = "xception_model"
-
-    model = DeepLabModel("proto_v2/" + modelType)
 
     def run_visualization(image_bytes):
         """Inferences DeepLab model and visualizes result."""
@@ -83,8 +76,6 @@ def seg(image_bytes, model_path, model_type=0):
         return orignal_im, seg_map
 
     visualization = run_visualization(image_bytes)
-
-    del model
 
     return visualization
 
