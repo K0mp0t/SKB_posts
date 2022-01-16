@@ -6,7 +6,7 @@ import random
 
 def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                        color=(0, 0, 0), text_outline_offset=0,
-                       max_font_size=72, text_pos_x=100, max_fill=0.75,
+                       max_font_size=72, text_pos_x=100, max_fill=0.5,
                        threshold=0.6):
     results = []
     text = genImage.text
@@ -66,7 +66,7 @@ def gen_simple_pattern(genImage, with_mask=False, text_size=(860, 64),
                 model=model,
                 forms_root=genImage.forms_root,
                 fig_count=fig_cnt,
-                forms_type='t',
+                forms_type='a',
                 fig_size_range=(min_fig_size, max_fig_size),
                 threshold=threshold))
 

@@ -1,4 +1,5 @@
 import io
+import random
 from functools import partial
 from proto_v2 import comp_colors, image_enhance, patterns, segmentation
 from PIL import Image
@@ -6,12 +7,12 @@ import time
 
 
 class GenImage:
-    def __init__(self, image_bytes, model, forms_root, fonts_root, seg_model_path, text=None):
+    def __init__(self, image_bytes, model, forms_root, fonts_root, seg_model, text=None):
         self.text = text
         self.basesize = 1080
         self.image_bytes = image_bytes
         self.image = Image.open(io.BytesIO(image_bytes))
-        self.seg_model_path = seg_model_path
+        self.seg_model = seg_model
         self.forms_root = forms_root
         self.fonts_root = fonts_root
 
@@ -76,13 +77,16 @@ class GenImage:
                                partial(patterns.gen_interview_pattern, self),
                                partial(patterns.gen_interview_pattern, self, pattern_type='color')]
 
-        c = 0
-
-        while c < 5:
-            c += 1
-            for pattern in generation_patterns:
+        if israndom:
+            while True:
+                pattern = generation_patterns[random.randint(0, len(generation_patterns))]
                 for image in pattern():
                     yield image
+        else:
+            while True:
+                for pattern in generation_patterns:
+                    for image in pattern():
+                        yield image
 
     def apply_all_enhance(self):
         self.original_image = self.image.copy()
@@ -110,7 +114,7 @@ class GenImage:
         Return:
           mask of key objects
         """
-        _, self.mask = segmentation.seg(self.image_bytes, self.seg_model_path)
+        _, self.mask = segmentation.seg(self.image_bytes, self.seg_model)
         return self.mask
 
     def crop_image(self):

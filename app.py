@@ -4,7 +4,7 @@ from base64 import b64decode, b64encode
 from PIL import Image
 import io
 import json
-from proto_v2 import main
+from proto_v2 import main, segmentation
 from tensorflow.python.keras.models import load_model
 import time
 import psutil
@@ -16,10 +16,11 @@ app = Flask(__name__, static_folder='static')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 ESTIMATOR = load_model('proto_v2/effnet_model/efficientnetB3_0.77.h5')
+SEG_MODEL = segmentation.DeepLabModel("proto_v2/xception_model")
 
 FORMS_ROOT = 'proto_v2/forms_processed'
 FONTS_ROOT = 'proto_v2/Fonts'
-SEG_MODEL_PATH = 'proto_v2/mobile_net_model'
+# SEG_MODEL_PATH = 'proto_v2/mobile_net_model'
 
 process = psutil.Process(os.getpid())
 
@@ -28,9 +29,9 @@ TOKENS_LIFETIME = dict()
 TOKENS_INDICES = dict()
 
 
-def generate_images(img_bytes, estimator, forms_root, fonts_root, seg_model_path, text):
+def generate_images(img_bytes, estimator, forms_root, fonts_root, seg_model, text):
     generator = main.GenImage(image_bytes=img_bytes, model=estimator, forms_root=forms_root, fonts_root=fonts_root,
-                              seg_model_path=seg_model_path, text=text)
+                              seg_model=seg_model, text=text)
 
     return generator.generate()
 
@@ -99,7 +100,7 @@ def init_generator():
             return Response('no image or text data', status=400)
 
         generator = main.GenImage(image_bytes=io.BytesIO(img_data).getvalue(), model=ESTIMATOR, forms_root=FORMS_ROOT,
-                                  fonts_root=FONTS_ROOT, seg_model_path=SEG_MODEL_PATH, text=text)
+                                  fonts_root=FONTS_ROOT, seg_model=SEG_MODEL, text=text)
 
         token = generate_token(10)
 
@@ -158,7 +159,7 @@ def generate():
             img_data = b64decode(request.json.get('image', ''))
 
             images = generate_images(io.BytesIO(img_data).getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT,
-                                     SEG_MODEL_PATH, text)
+                                     SEG_MODEL, text)
 
             encoded_images = list()
 
@@ -184,7 +185,7 @@ def generate():
 
             start = time.time()
 
-            images = generate_images(img_bytes.getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL_PATH, text)
+            images = generate_images(img_bytes.getvalue(), ESTIMATOR, FORMS_ROOT, FONTS_ROOT, SEG_MODEL, text)
 
             end = round(time.time() - start, 2)
 
