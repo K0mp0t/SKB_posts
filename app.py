@@ -1,5 +1,5 @@
 import string
-from flask import Flask, request, render_template, Response, url_for, send_file
+from flask import Flask, request, render_template, Response, send_file
 from base64 import b64decode, b64encode
 from PIL import Image
 import io
@@ -64,31 +64,45 @@ def prune_tokens():
         remove_token_resources(token)
 
 
-@app.route('/api/remove-token')
+@app.route('/api/remove-token', methods=['GET', 'OPTIONS'])
 def remove_token():
-    token = request.args.get('token', default='*', type=str)
+    if request.method == 'GET':
+        token = request.args.get('token', default='*', type=str)
 
-    if token not in GENERATORS or token == '*':
-        return Response('invalid token', status=400)
+        if token not in GENERATORS or token == '*':
+            return Response('invalid token', status=400)
 
-    remove_token_resources(token)
+        remove_token_resources(token)
 
-    return Response(status=200)
+        return Response(status=200)
+    elif request.method == 'OPTIONS':
+        return Response(status=204, headers={'Access-Control-Allow-Origin': '*',
+                                             'Content-Type': 'application/json',
+                                             'Access-Control-Allow-Methods': ['POST', 'GET', 'OPTIONS'],
+                                             'Access-Control-Allow-Headers': ['X-PINGOTHER', 'Content-Type'],
+                                             'Access-Control-Max-Age': 86400})
 
 
-@app.route('/api/prolong-token')
+@app.route('/api/prolong-token', methods=['GET', 'OPTIONS'])
 def prolong():
-    token = request.args.get('token', default='*', type=str)
-    TOKENS_LIFETIME[token] = time.time()
+    if request.method == 'GET':
+        token = request.args.get('token', default='*', type=str)
+        TOKENS_LIFETIME[token] = time.time()
 
-    return Response(status=200)
+        return Response(status=200)
+    elif request.method == 'OPTIONS':
+        return Response(status=204, headers={'Access-Control-Allow-Origin': '*',
+                                             'Content-Type': 'application/json',
+                                             'Access-Control-Allow-Methods': ['POST', 'GET', 'OPTIONS'],
+                                             'Access-Control-Allow-Headers': ['X-PINGOTHER', 'Content-Type'],
+                                             'Access-Control-Max-Age': 86400})
 
 
-@app.route('/api/init', methods=['POST'])
+@app.route('/api/init', methods=['POST', 'OPTIONS'])
 def init_generator():
     prune_tokens()
 
-    if request.json:
+    if request.method == 'POST' and request.json:
         if 'text' not in request.json or 'image' not in request.json:
             return Response(status=400)
         text = request.json.get('text', '')
@@ -110,22 +124,36 @@ def init_generator():
 
         return Response(json.dumps({'token': token}), status=201)
 
+    elif request.method == 'OPTIONS':
+        return Response(status=204, headers={'Access-Control-Allow-Origin': '*',
+                                             'Content-Type': 'application/json',
+                                             'Access-Control-Allow-Methods': ['POST', 'GET', 'OPTIONS'],
+                                             'Access-Control-Allow-Headers': ['X-PINGOTHER', 'Content-Type'],
+                                             'Access-Control-Max-Age': 86400})
+
     return Response('no json recieved', status=400)
 
 
-@app.route('/api/getnextimage')
+@app.route('/api/getnextimage', methods=['GET', 'OPTIONS'])
 def get_next_image():
-    token = request.args.get('token', default='*', type=str)
-    if token not in GENERATORS or token == '*':
-        return Response('invalid token', status=400)
+    if request.method == 'GET' or request.method == 'POST':
+        token = request.args.get('token', default='*', type=str)
+        if token not in GENERATORS or token == '*':
+            return Response('invalid token', status=400)
 
-    generated_image = next(GENERATORS[token])
-    path = os.path.join('static', f'{token}_{TOKENS_INDICES[token]}.png')
-    generated_image.save(path)
+        generated_image = next(GENERATORS[token])
+        path = os.path.join('static', f'{token}_{TOKENS_INDICES[token]}.png')
+        generated_image.save(path)
 
-    TOKENS_INDICES[token] += 1
+        TOKENS_INDICES[token] += 1
 
-    return Response(json.dumps({'url': path}), 200)
+        return Response(json.dumps({'url': path}), 200)
+    elif request.method == 'OPTIONS':
+        return Response(status=204, headers={'Access-Control-Allow-Origin': '*',
+                                             'Content-Type': 'application/json',
+                                             'Access-Control-Allow-Methods': ['POST', 'GET', 'OPTIONS'],
+                                             'Access-Control-Allow-Headers': ['X-PINGOTHER', 'Content-Type'],
+                                             'Access-Control-Max-Age': 86400})
 
 
 # DEPRECIATED
